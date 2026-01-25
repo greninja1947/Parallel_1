@@ -66,43 +66,37 @@ struct StockInfo{
 
 void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq){
     double check1 = omp_get_wtime();
-
+    
+    int max_stocks = 1e5+1;
     int n = orderBook.size();
     int number_of_snapshots = n / freq + 1;
-
-    /*
-        new idea, first traverse the complet order book and create a map from stock id to the indices where the occur in 
-        the vector that is a map from stock id to vector of indices.
-        then in parallel each thread can process a stock id and make a vector of stockinfo structs one for each snapshot,
-        finally we can again assingn parallelly each snapshot to each thread and write the output paralley in files.
-    */
-    map<uint32_t,int> stockIdToIndices;
-    vector<vector<OrderBookEntry>>allEntries;
-
+    vector<vector<OrderBookEntry>>allEntries(max_stocks);
+    vector<OrderBookEntry> decoded(n);
+    #pragma parallel for schedule(static)
     for(int i = 0;i<n;i++){
-        OrderBookEntry ob = decodePacket(unstuffBits(orderBook[i]), i);
-        if(stockIdToIndices.find(ob.stockID)==stockIdToIndices.end()){
-            stockIdToIndices[ob.stockID] = stockIdToIndices.size();
-            vector<OrderBookEntry> temp;
-            temp.push_back(ob);
-            allEntries.push_back(temp);
-        }else{
-            int id = stockIdToIndices[ob.stockID];
-            allEntries[id].push_back(ob);
-        }
+        decoded[i] = decodePacket(unstuffBits(orderBook[i]),i);
     }
 
-    int number_of_stocks = stockIdToIndices.size();
-    vector<vector<StockInfo>> finalData(number_of_snapshots,vector<StockInfo>(number_of_stocks));
+    set<int> unique_stocks;
+    for(int i = 0;i<n;i++){
+        OrderBookEntry ob = decoded[i];
+        unique_stocks.insert(ob.stockID);
+        allEntries[ob.stockID].push_back(ob);
+    }
+    
+    int number_of_stocks = unique_stocks.size();
+    vector<int>unique_stocks_vector(unique_stocks.begin(),unique_stocks.end());
+    vector<vector<StockInfo>> finalData(number_of_snapshots,vector<StockInfo>(max_stocks));
     
     double check2 = omp_get_wtime();
 
     #pragma omp parallel for 
     for(int i = 0;i<number_of_stocks;i++){
         // i = id of stock in allEntries
-        vector<OrderBookEntry> &entries = allEntries[i];
+        int stockid = unique_stocks_vector[i];
+        vector<OrderBookEntry> &entries = allEntries[stockid];
         StockInfo currentStock;
-        currentStock.StockId = entries[0].stockID;
+        currentStock.StockId = stockid;
         int snapshotIndex = 0;
         for(int j = 0;j<entries.size();j++){
             OrderBookEntry &entry = entries[j];
@@ -134,7 +128,7 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq){
                 while((nextIndex / freq) != snapshotIndex){
                     StockInfo tempStock = currentStock;
                     tempStock.StockId = entry.stockID;
-                    finalData[snapshotIndex][i] = tempStock;
+                    finalData[snapshotIndex][stockid] = tempStock;
                     snapshotIndex++;
                 }
             }else{
@@ -142,7 +136,7 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq){
                 while(snapshotIndex < number_of_snapshots){
                     StockInfo tempStock = currentStock;
                     tempStock.StockId = entry.stockID;
-                    finalData[snapshotIndex][i] = tempStock;
+                    finalData[snapshotIndex][stockid] = tempStock;
                     snapshotIndex++;
                 }
             }            
@@ -153,35 +147,28 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq){
 
     #pragma omp parallel for
     for(int i = 0;i<number_of_snapshots;i++){
-        vector<StockInfo> order;
+        vector<vector<StockInfo>> bucketSort(256);
         for(int j = 0;j<number_of_stocks;j++){
-            if(finalData[i][j].hasBuyForMax || finalData[i][j].hasSellForMin){
-                order.push_back(finalData[i][j]);
+            int stockid = unique_stocks_vector[j];
+            if(finalData[i][stockid].hasBuyForMax || finalData[i][stockid].hasSellForMin){
+                int spread = finalData[i][stockid].getSpread();
+                bucketSort[spread].push_back(finalData[i][stockid]);
             }
         }
-        sort(order.begin(),order.end(),[](const StockInfo& a, const StockInfo &b){
-            int spreadA = a.getSpread();
-            int spreadB = b.getSpread();
-            if(spreadA != spreadB){
-                return spreadA > spreadB;
-            }
-            return a.StockId > b.StockId;
-        });
-
-
-
+        
         string filename = "snap_" + to_string(i) + ".txt";
         FILE* file = fopen(filename.c_str(), "w");
-        
-        for (const auto& stock : order) {
-            int spread = stock.getSpread();
-            fprintf(file, "%u %d %d %d\n", 
-                    stock.StockId, 
-                    (int)stock.lastSellValue, 
-                    (int)stock.lastBuyValue, 
-                    spread);
+        for(int spread = 255;spread>=0;spread--){
+            for(int k = bucketSort[spread].size()-1;k>=0;k--){
+                StockInfo stock = bucketSort[spread][k];
+                int spread = stock.getSpread();
+                fprintf(file, "%u %d %d %d\n", 
+                        stock.StockId, 
+                        (int)stock.lastSellValue, 
+                        (int)stock.lastBuyValue, 
+                        spread);
+            }
         }
-        
         fclose(file);
     }
 
@@ -195,15 +182,16 @@ int64_t totalAmountTraded(const std::vector<uint64_t> &orderBook){
     #pragma omp parallel for reduction(+:total)
     for(uint64_t packet : orderBook){
         uint64_t unstuffed = unstuffBits(packet);
-        OrderBookEntry entry = decodePacket(unstuffed,0);
-        total += (int64_t)entry.orderValue * (int64_t)entry.orderQty;
+        int qty = (unstuffed >> 33) & (0xFF);
+        int value = (unstuffed >>41) & (0xFF);
+        total += value * qty;
     }
     return total;
 }
 
 void printOrderStats(const std::vector<uint64_t> &orderBook){
     int num_threads = omp_get_max_threads();
-    vector<map<uint32_t,StockInfo>> threadStockMaps(num_threads);
+    vector<unordered_map<uint32_t,StockInfo>> threadStockMaps(num_threads);
 
     int n = orderBook.size();
 
@@ -235,7 +223,7 @@ void printOrderStats(const std::vector<uint64_t> &orderBook){
 
     // merge the maps from different threads
 
-    map<uint32_t,StockInfo> finalStockMap;
+    unordered_map<uint32_t,StockInfo> finalStockMap;
     for(int t = 0;t<num_threads;t++){
         for(auto &pair : threadStockMaps[t]){
             uint32_t stockId = pair.first;
@@ -264,11 +252,17 @@ void printOrderStats(const std::vector<uint64_t> &orderBook){
     }
     string filename = "stats.txt";
     ofstream outFile(filename);
+    int max_stocks = 1e5+1;
+    vector<StockInfo> stocks(max_stocks);
 
+    for(const auto& pr : finalStockMap){
+        stocks[pr.first] = pr.second;
+    }
+    
     FILE* file = fopen(filename.c_str(), "w");
-    for (const auto& pr : finalStockMap) {
-        StockInfo stock = pr.second;
-        double avg = stock.orderCount > 0 ? static_cast<double>(stock.sumOrderValue) / static_cast<double>(stock.orderCount) : 0.0;
+    for (const auto& stock : stocks) {
+        if(stock.orderCount == 0) continue;
+        double avg = static_cast<double>(stock.sumOrderValue) / static_cast<double>(stock.orderCount);
         int minsell = stock.hasSellForMin ? stock.minSellValue : 0;
         int maxbuy = stock.hasBuyForMax ? stock.maxBuyValue : 0;
         fprintf(file, "%u %d %d %.4f\n", 
@@ -277,3 +271,4 @@ void printOrderStats(const std::vector<uint64_t> &orderBook){
     
     fclose(file);
 }
+

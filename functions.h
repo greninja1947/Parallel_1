@@ -7,6 +7,9 @@
 #include <map>
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
+#include <set>
+#include <unordered_map>
 
 void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq);
 int64_t totalAmountTraded(const std::vector<uint64_t> &orderBook);
