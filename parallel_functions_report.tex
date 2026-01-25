@@ -1,0 +1,75 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Code formatting
+\lstset{
+    language=C++,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single
+}
+
+\title{Parallel Processing Assignment 1 - Design Decisions Report}
+\author{Assignment Report}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This report documents the design decisions and performance considerations for the parallel implementation of three core functions in the order book processing system: \texttt{updateDisplay}, \texttt{totalAmountTraded}, and \texttt{printOrderStats}. Each function has been optimized using OpenMP parallel programming techniques to improve performance over their sequential counterparts.
+
+\section{Function Analysis}
+
+\subsection{updateDisplay Function}
+
+\paragraph{Design Decisions:}
+The parallel implementation of \texttt{updateDisplay} employs a sophisticated multi-phase approach to maximize parallelization opportunities. The key design decision was to restructure the algorithm into three distinct phases: (1) data preprocessing and stock grouping, (2) parallel processing by stock ID, and (3) parallel snapshot file generation.
+
+The algorithm first groups all order book entries by stock ID, creating a map from stock IDs to their corresponding entries. This preprocessing step enables the core parallel section where each thread processes a different stock independently using \texttt{\#pragma omp parallel for}. Each thread maintains its own \texttt{StockInfo} state and tracks snapshot boundaries based on entry indices and frequency parameters.
+
+The final phase parallelizes file output operations, where each snapshot is written to disk concurrently. This design eliminates data races by ensuring each thread operates on independent data structures and file handles. The use of a 2D vector \texttt{finalData[snapshots][stocks]} allows threads to write their results without synchronization overhead.
+
+\subsection{totalAmountTraded Function}
+
+\paragraph{Design Decisions:}
+The \texttt{totalAmountTraded} function implements a straightforward parallel reduction pattern using OpenMP's built-in reduction clause. The design prioritizes simplicity and efficiency by leveraging the \texttt{\#pragma omp parallel for reduction(+:total)} directive.
+
+Each thread processes a subset of the order book entries independently, performing bit unstuffing, packet decoding, and local accumulation of trading amounts. The reduction clause handles the thread-safe accumulation of partial results into the final total. This approach is optimal for this embarrassingly parallel problem, as there are no data dependencies between iterations.
+
+The function maintains numerical accuracy by using \texttt{int64\_t} arithmetic to prevent overflow issues when multiplying order quantities by order values. The parallel overhead is minimal since each iteration performs substantial computational work (bit manipulation and arithmetic operations).
+
+\subsection{printOrderStats Function}
+
+\paragraph{Design Decisions:}
+The \texttt{printOrderStats} function implements a thread-local data aggregation strategy followed by a sequential merge phase. The design creates separate \texttt{StockInfo} maps for each thread to avoid lock contention during the parallel processing phase.
+
+Each thread maintains its own private map (\texttt{threadStockMaps[thread\_id]}) and processes a subset of order book entries using \texttt{\#pragma omp parallel for}. Threads independently update their local stock statistics without synchronization. After parallel processing completes, the main thread sequentially merges all thread-local maps into a single result map.
+
+This design minimizes synchronization overhead while maintaining data consistency. The trade-off is increased memory usage (multiple maps) for improved parallel efficiency. The final file output is performed sequentially to ensure consistent formatting and avoid file I/O conflicts.
+
+\section{Performance Considerations}
+
+\subsection{Load Balancing}
+All three functions utilize OpenMP's default static scheduling for the \texttt{parallel for} constructs. This choice is appropriate given the uniform computational complexity of processing individual order book entries.
+
+\subsection{Memory Access Patterns}
+The parallel implementations are designed to maximize cache locality. The \texttt{updateDisplay} function groups data by stock ID to improve spatial locality when processing related entries. The thread-local maps in \texttt{printOrderStats} reduce cache line conflicts between threads.
+
+\subsection{Scalability}
+The algorithms scale well with the number of available CPU cores. The reduction-based approach in \texttt{totalAmountTraded} provides near-linear speedup for large datasets. The data partitioning strategies in the other functions minimize inter-thread dependencies, enabling effective utilization of multiple cores.
+
+\section{Conclusion}
+
+The parallel implementations demonstrate effective use of OpenMP constructs to achieve significant performance improvements over sequential versions. The design decisions prioritize correctness, minimize synchronization overhead, and maximize parallel efficiency while maintaining the functional requirements of the order book processing system.
+
+\end{document}

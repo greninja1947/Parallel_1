@@ -1,0 +1,11 @@
+total amount traded: 16254381255
+update display: 2.21702 seconds
+total amount traded computation time: 0.079287 seconds
+print order stats computation time: 0.430111 seconds
+total amount traded: 16254381255
+
+seq. update display: 4.21043 seconds
+seq. total amount traded computation time: 0.243659 seconds
+seq. print order stats computation time: 0.80067 seconds
+snapshots are correct
+stats are correct
