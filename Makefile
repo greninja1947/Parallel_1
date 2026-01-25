@@ -21,4 +21,4 @@ run: all
 
 clean:
 	rm -f sequence parallel testcase test 
-	rm -f outputs/snap_*.txt outputs/true_snap_*.txt outputs/stats.txt outputs/true_stats.txt
+	rm -f snap_*.txt true_snap_*.txt stats.txt true_stats.txt

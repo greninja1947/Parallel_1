@@ -170,7 +170,7 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq){
 
 
 
-        string filename = "outputs/snap_" + to_string(i) + ".txt";
+        string filename = "snap_" + to_string(i) + ".txt";
         FILE* file = fopen(filename.c_str(), "w");
         
         for (const auto& stock : order) {
@@ -262,7 +262,7 @@ void printOrderStats(const std::vector<uint64_t> &orderBook){
             finalStock.orderCount += stockFromThread.orderCount;
         }
     }
-    string filename = "outputs/stats.txt";
+    string filename = "stats.txt";
     ofstream outFile(filename);
 
     FILE* file = fopen(filename.c_str(), "w");

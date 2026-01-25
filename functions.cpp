@@ -108,7 +108,7 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq) {
                 return a.stockID > b.stockID;
             });
             
-            std::string filename = "outputs/true_snap_" + std::to_string(snapCount) + ".txt";
+            std::string filename = "true_snap_" + std::to_string(snapCount) + ".txt";
             FILE* file = fopen(filename.c_str(), "w");
             
             for (const auto& stock : stocks) {
@@ -139,7 +139,7 @@ void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq) {
                 return a.stockID > b.stockID;
             });
             
-            std::string filename = "outputs/true_snap_" + std::to_string(snapCount) + ".txt";
+            std::string filename = "true_snap_" + std::to_string(snapCount) + ".txt";
             FILE* file = fopen(filename.c_str(), "w");
             
         
@@ -197,7 +197,7 @@ void printOrderStats(const std::vector<uint64_t> &orderBook) {
         stock.orderCount++;
     }
     
-    FILE* file = fopen("outputs/true_stats.txt", "w");
+    FILE* file = fopen("true_stats.txt", "w");
     
     for (auto& pair : stockMap) {
         const StockInfo& stock = pair.second;

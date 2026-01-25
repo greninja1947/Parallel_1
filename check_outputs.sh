@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Change to snapshots directory
-cd outputs
-
 # Flag to track if all diffs are empty
 snaps_correct=true
 stats_correct=true
