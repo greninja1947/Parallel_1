@@ -1,11 +1,14 @@
-total amount traded: 16254381255
-update display: 2.35398 seconds
-total amount traded computation time: 0.098663 seconds
-print order stats computation time: 0.462763 seconds
-total amount traded: 16254381255
-
-seq. update display: 4.29048 seconds
-seq. total amount traded computation time: 0.240918 seconds
-seq. print order stats computation time: 0.634558 seconds
+g++-15 -fopenmp -o main main.cpp functions.cpp functions_sequential.cpp
+Decoding Time: 0.609565 seconds
+Processing Time: 0.037184 seconds
+Writing Time: 0.381531 seconds
+total amount traded: 16269149317
+update display: 1.05221 seconds
+total amount traded computation time: 0.014204 seconds
+print order stats computation time: 0.221425 seconds
+total amount traded: 16269149317
+seq. update display: 4.47468 seconds
+seq. total amount traded computation time: 0.243505 seconds
+seq. print order stats computation time: 0.668631 seconds
 snapshots are correct
 stats are correct

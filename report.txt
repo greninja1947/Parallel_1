@@ -1,0 +1,87 @@
+Performance Analysis Report
+===========================
+
+Test Configuration: freq=10000
+Each experiment run 3 times, average reported
+
+Threads: 1
+----------------------------------------
+
+updateDisplay:
+  Parallel Time:   1.370980 seconds
+  Sequential Time: 4.594037 seconds
+  Speedup:         3.35x
+
+totalAmountTraded:
+  Parallel Time:   0.060402 seconds
+  Sequential Time: 0.285308 seconds
+  Speedup:         4.72x
+
+printOrderStats:
+  Parallel Time:   0.083352 seconds
+  Sequential Time: 0.697662 seconds
+  Speedup:         8.37x
+
+========================================
+
+Threads: 2
+----------------------------------------
+
+updateDisplay:
+  Parallel Time:   0.691926 seconds 
+  Sequential Time: 4.325730 seconds
+  Speedup:         6.25x.  -> 1.9813x
+
+
+totalAmountTraded:
+  Parallel Time:   0.030792 seconds
+  Sequential Time: 0.243580 seconds
+  Speedup:         7.91x.  -> 1.9616x
+
+printOrderStats:
+  Parallel Time:   0.050541 seconds
+  Sequential Time: 0.667531 seconds
+  Speedup:         13.21x -> 1.64x
+
+========================================
+
+Threads: 4
+----------------------------------------
+
+updateDisplay:
+  Parallel Time:   0.383881 seconds
+  Sequential Time: 4.272627 seconds
+  Speedup:         11.13x -> 3.571x
+
+totalAmountTraded:
+  Parallel Time:   0.015994 seconds
+  Sequential Time: 0.244615 seconds
+  Speedup:         15.29x -> 3.7765x
+
+printOrderStats:
+  Parallel Time:   0.035230 seconds
+  Sequential Time: 0.665474 seconds
+  Speedup:         18.89x -> 2.365x
+
+========================================
+
+Threads: 8
+----------------------------------------
+
+updateDisplay:
+  Parallel Time:   0.326783 seconds
+  Sequential Time: 4.235157 seconds
+  Speedup:         12.96x -> 4.195x 
+
+totalAmountTraded:
+  Parallel Time:   0.013626 seconds
+  Sequential Time: 0.243575 seconds
+  Speedup:         17.88x -> 4.432x
+
+printOrderStats:
+  Parallel Time:   0.034176 seconds
+  Sequential Time: 0.647009 seconds
+  Speedup:         18.93x -> 2.438x
+
+========================================
+

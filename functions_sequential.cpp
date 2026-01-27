@@ -68,7 +68,7 @@ struct _StockInfo {
     }
 };
 
-void _updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq) {
+void _updateDisplay(const std::vector<uint64_t> &orderBook, int64_t freq) {
     std::map<uint32_t, _StockInfo> stockMap;
     int snapCount = 0;
     

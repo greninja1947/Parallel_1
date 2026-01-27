@@ -11,10 +11,10 @@
 #include <set>
 #include <unordered_map>
 
-void updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq);
+void updateDisplay(const std::vector<uint64_t> &orderBook, int64_t freq);
 int64_t totalAmountTraded(const std::vector<uint64_t> &orderBook);
 void printOrderStats(const std::vector<uint64_t> &orderBook);
-void _updateDisplay(const std::vector<uint64_t> &orderBook, int32_t freq);
+void _updateDisplay(const std::vector<uint64_t> &orderBook, int64_t freq);
 int64_t _totalAmountTraded(const std::vector<uint64_t> &orderBook);
 void _printOrderStats(const std::vector<uint64_t> &orderBook);
 

@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     ofstream outFile(file);
     for (int i = 0; i < n; i++) {
         OrderBookEntry e;
-        e.stockID = rand()%100000;
+        e.stockID = rand()%10;
         e.orderType = rand() % 2;
         e.orderQty = rand() % 256;
         e.orderValue = rand() % 256;
